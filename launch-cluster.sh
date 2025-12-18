@@ -77,7 +77,7 @@ fi
 if [[ -z "$ETH_IF" || -z "$IB_IF" ]]; then
     echo "Auto-detecting interfaces..."
     
-    # Get all Up interfaces: "mlx5_0 port 1 ==> enp1s0f0np0 (Up)"
+    # Get all Up interfaces: "rocep1s0f1 port 1 ==> enp1s0f1np1 (Up)"
     # We capture: IB_DEV, NET_DEV
     mapfile -t IB_NET_PAIRS < <(ibdev2netdev | awk '/Up\)/ {print $1 " " $5}')
     
@@ -228,6 +228,21 @@ echo "Head Node: $HEAD_IP"
 echo "Worker Nodes: ${WORKER_NODES[*]}"
 echo "Container Name: $CONTAINER_NAME"
 echo "Action: $ACTION"
+
+# Check SSH connectivity to worker nodes
+if [[ "$ACTION" == "start" || "$ACTION" == "exec" || "$CHECK_CONFIG" == "true" ]]; then
+    if [ ${#WORKER_NODES[@]} -gt 0 ]; then
+        echo "Checking SSH connectivity to worker nodes..."
+        for worker in "${WORKER_NODES[@]}"; do
+            if ! ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no "$worker" true 2>/dev/null; then
+                echo "Error: Passwordless SSH to $worker failed."
+                echo "  Please ensure SSH keys are configured and the host is reachable."
+                exit 1
+            fi
+            echo "  SSH to $worker: OK"
+        done
+    fi
+fi
 
 if [[ "$CHECK_CONFIG" == "true" ]]; then
     echo "Configuration Check Complete."
