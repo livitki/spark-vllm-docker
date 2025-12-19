@@ -109,7 +109,8 @@ if [ "${NODE_TYPE}" == "head" ]; then
         --node-ip-address "$VLLM_HOST_IP" \
 	--include-dashboard=True \
         --dashboard-host "0.0.0.0" \
-        --dashboard-port 8265
+        --dashboard-port 8265 \
+        --disable-usage-stats
 else
     echo "Starting Ray WORKER node connecting to $HEAD_IP..."
     exec ray start --block \
