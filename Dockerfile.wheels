@@ -18,6 +18,7 @@ ENV MAKEFLAGS="-j${BUILD_JOBS}"
 ENV PIP_CACHE_DIR=/root/.cache/pip
 ENV UV_CACHE_DIR=/root/.cache/uv
 ENV UV_SYSTEM_PYTHON=1
+ENV UV_LINK_MODE=copy
 
 # Install minimal runtime dependencies (NCCL, Python)
 # Note: "devel" tools like cmake/gcc are NOT installed here to save space
@@ -59,6 +60,12 @@ RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
 # Apply TEMPORARY PATCH for fastsafetensors loading in cluster setup - tracking https://github.com/foundation-model-stack/fastsafetensors/issues/36
 # Apply in site-packages
 RUN patch -p1 -d /usr/local/lib/python3.12/dist-packages < ${VLLM_BASE_DIR}/fastsafetensors.patch
+
+# Install flashinfer helper packages
+RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
+    uv pip install --system --break-system-packages flashinfer-python -U --no-deps --pre --index-url https://flashinfer.ai/whl && \
+    uv pip install --system --break-system-packages flashinfer-cubin --pre --index-url https://flashinfer.ai/whl && \
+    uv pip install --system --break-system-packages flashinfer-jit-cache --pre --index-url https://flashinfer.ai/whl/cu130
 
 # Setup Env for Runtime
 ENV TORCH_CUDA_ARCH_LIST=12.1a
